@@ -177,7 +177,7 @@ def test_write() -> int:
     insts = [assemble_test_instruction(elem) for elem in inst_list]
 
     # Setting the Output Register
-    test_main_buffer.write_mem2_output(Bits(uint=176,length=mem_config.MEM2_BITWIDTH))
+    test_main_buffer.write_mem2_input(Bits(uint=176,length=mem_config.MEM2_BITWIDTH))
 
     # Executing the Instruction
     for elem in insts:

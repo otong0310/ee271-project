@@ -57,7 +57,7 @@ class MainBuffer:
     def read_mem1_output(self) -> Bits:
         return self._mem1_output_port
 
-    def write_mem2_output(self, value : Bits) -> None:
+    def write_mem2_input(self, value : Bits) -> None:
         self._mem2_input_port = value
 
     def set_mem0(self, mem : list[int]) -> None:
