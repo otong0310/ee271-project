@@ -35,19 +35,41 @@ class MainBuffer:
 
     def execute_instruction(self, instruction : MemoryInstruction) -> None:
         # START IMPLEMENTATION
-        # Your Code Here
+        op = instruction.get_opcode().uint
+        if op == MI.READ:
+            self._handle_read(instruction)
+        elif op == MI.WRITE:
+            self._handle_write(instruction)
         # END IMPLEMENTATION
         return None
 
     def _handle_read(self, instruction : MemoryInstruction) -> None:
         # START IMPLEMENTATION
-        # Your Code Here
+        w = Mode.bitwidth(int(instruction.get_mode().uint)) # 8, 16 or 32
+        a = instruction.get_mema_offset().uint
+        b = instruction.get_memb_offset().uint
+
+        # MEM0: the whole word at MemAOffset, in every mode
+        self._mem0_output_port = self._mem0[a]
+
+        # MEM1: pick one w-bit slice, then repeat it to fill the word
+        total = self._buffer_config.MEM1_BITWIDTH 
+        n     = total // w  # slices per word: 1, 2, 4
+        word  = self._mem1[b // n]  # which word
+        k     = b % n # which bit the the word
+
+        start = total - (k + 1) * w
+        end   = total - k * w
+        piece = word[start:end]
+
+        self._mem1_output_port = Bits().join([piece] * n)
         # END IMPLEMENTATION
         return None
 
     def _handle_write(self, instruction : MemoryInstruction) -> None:
         # START IMPLEMENTATION
-        # Your Code Here
+        a = instruction.get_mema_offset().uint
+        self._mem2[a] = self._mem2_input_port
         # END IMPLEMENTATION
         return None
 
