@@ -76,6 +76,60 @@ class Accelerator:
 
     def execute_instruction(self, instruction : Instruction):
         # START IMPLEMENTATION
-        # Your Code Here
+        mem_inst = instruction.get_mem_instruction()
+        pe_inst  = instruction.get_pe_instruction()
+        count    = instruction.get_count().uint
+        mema_inc = instruction.get_mema_inc().uint
+        memb_inc = instruction.get_memb_inc().uint
+        
+        #input
+        IN = self._controller_config.PE_CONFIG.INPUT_BITWIDTH
+        
+        #restoring orginal
+        original = mem_inst.get_instruction()
+        mema_off = mem_inst.get_mema_offset()
+        memb_off = mem_inst.get_memb_offset()
+        mema = mema_off.uint
+        memb = memb_off.uint
+        mema_limit = 2 ** len(mema_off)
+        memb_limit = 2 ** len(memb_off)
+
+        for step in range(count + 1):
+
+            # 1. memory instruction
+            mem_inst.set_mema_offset(mema)
+            mem_inst.set_memb_offset(memb)
+            self._main_buffer.execute_instruction(mem_inst)
+
+            # 2. run PE
+            mem0_word = self._main_buffer.read_mem0_output()
+            mem1_word = self._main_buffer.read_mem1_output()
+            total = len(mem0_word)
+
+            for i in range(len(self._pe_array)):
+                start = total - (i + 1) * IN
+                end   = total - i * IN
+                pe = self._pe_array[i]
+                pe.input_a(mem1_word)
+                pe.input_b(mem0_word[start:end])
+                pe.execute_instruction(pe_inst)
+
+            # 3. Collect PE's output register into the MEM2 input port
+            
+            outputs = []
+            num_pes = len(self._pe_array)
+
+            for i in reversed(range(num_pes)): # last PE first, PE 0 last
+                pe = self._pe_array[i]
+                pe_output = pe.get_output()
+                outputs.append(pe_output)
+
+            self._main_buffer.write_mem2_input(Bits().join(outputs))
+
+            # 4. Step the offsets for the next repetition
+            mema = (mema + mema_inc) % mema_limit
+            memb = (memb + memb_inc) % memb_limit
+
+        mem_inst.set_instruction(original)
         # END IMPLEMENTATION
         return 0
